@@ -5,6 +5,8 @@ CAN Bus project for automotive racing data acquisition.
 
 ![DAQ Hardware](https://c2.staticflickr.com/4/3721/33228391716_65c716e27c.jpg)
 
+![DAQ Mounted](https://c1.staticflickr.com/5/4255/35036704283_ceaefbb8d3_z.jpg)
+
 Software:
 - Linux OS (Raspbian)
 - SocketCAN
