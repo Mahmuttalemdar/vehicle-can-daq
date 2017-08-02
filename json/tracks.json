@@ -1,4 +1,14 @@
 {
+	"Circuit de Salina": {
+		"Track Name": "Circuit de Salina",
+		"State": "Kansas",
+		"City": "Salina",
+		"Postal Code": "KS",
+		"Latitude": 38.800340,
+		"Longitude": -97.634412,
+		"Length": 1.2,
+		"Turns": 4
+	},
 	"Heartland Park": {
 		"Track Name": "Heartland Park",
 		"State": "Kansas",

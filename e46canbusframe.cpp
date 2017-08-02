@@ -6,6 +6,11 @@ E46CanBusFrame::E46CanBusFrame()
 
 }
 
+E46CanBusFrame::E46CanBusFrame(QCanBusFrame frame)
+:
+    QCanBusFrame(frame)
+{}
+
 E46CanBusFrame::E46CanBusFrame(FrameType type = DataFrame)
 :
     QCanBusFrame(type)
@@ -16,83 +21,89 @@ E46CanBusFrame::E46CanBusFrame(quint32 identifier, const QByteArray &data)
     QCanBusFrame(identifier, data)
 {}
 
-unsigned short E46CanBusFrame::decodeEngineRpm() const
+uint_fast8_t E46CanBusFrame::decodeEngineRpm() const
 {
     /*
     Unit: RPM
     CAN Id: 0x316 (790)
-    Conversion: ((B4 * 256) + B3) / 6.4
+    Conversion: ((bit4 * 256) + bit3) / 6.4
     */
 
     if(frameId() != E46_ENGINE_RPM)
         return 0;
 
-    unsigned short b3, b4;
+    uint_fast8_t bit3, bit4, rpm;
     const QByteArray &payload = this->payload();
 
-    b3 = payload[2];
-    b4 = payload[3];
+    bit3 = payload[2];
+    bit4 = payload[3];
+    rpm = ((bit4 << 8) ^ bit3) / 6.4;
 
-    return ((b4 * 256) + b3) / 6.4;
+    return rpm;
 }
 
-unsigned short E46CanBusFrame::decodeVehicleSpeed() const
+uint_fast8_t E46CanBusFrame::decodeVehicleSpeed() const
 {
     /*
-    Unit: ?
-    CAN Id: ?
-    Conversion: ?
+    Unit: MPH
+    CAN Id: 0x153 (339)
+    Conversion: ((bit3 * 256) + bit2) * 0.0776714;
     */
 
     if(frameId() != E46_VEHICLE_SPEED)
         return 0;
 
+    uint_fast8_t speed;
     const QByteArray &payload = this->payload();
 
-    return 0;
+    speed = payload[2];
+
+    return speed;
 }
 
-unsigned short E46CanBusFrame::decodeFuelLevel() const
+uint_fast8_t E46CanBusFrame::decodeFuelLevel() const
 {
     /*
     Unit: Liters -> Percent (%)
     CAN Id: 0x613 (1555)
-    Conversion: B3
-    Note: B3 is fuel level. Full being hex 39. Fuel light comes on at hex 8.
+    Conversion: bit3
+    Note: bit3 is fuel level. Full being hex 39. Fuel light comes on at hex 8.
     */
 
     if(frameId() != E46_FUEL_LEVEL)
         return 0;
 
+    uint_fast8_t bit3, fuelLevel;
     const float fuelCapacity = 57.0; //62.83784;
-    unsigned short b3;
     const QByteArray &payload = this->payload();
 
-    b3 = payload[2];
+    bit3 = payload[2];
+    fuelLevel = (bit3 / fuelCapacity) * 100;
 
-    return (b3 / fuelCapacity) * 100;
+    return fuelLevel;
 }
 
-short E46CanBusFrame::decodeCoolantTempC() const
+int_fast8_t E46CanBusFrame::decodeCoolantTempC() const
 {
     /*
     Unit: C
     CAN Id: 0x329 (809)
-    Conversion: (B2 * 0.75) - 48.373
+    Conversion: (bit2 * 0.75) - 48.373
     */
 
     if(frameId() != E46_COOLANT_TEMP)
         return 0;
 
-    unsigned short b2;
+    int_fast8_t bit2, temp;
     const QByteArray &payload = this->payload();
 
-    b2 = payload[1];
+    bit2 = payload[1];
+    temp = (bit2 * 0.75) - 48.373;
 
-    return (b2 * 0.75) - 48.373;
+    return temp;
 }
 
-short E46CanBusFrame::decodeCoolantTempF() const
+int_fast8_t E46CanBusFrame::decodeCoolantTempF() const
 {
     /*
     Unit: C
@@ -103,26 +114,27 @@ short E46CanBusFrame::decodeCoolantTempF() const
     return decodeCoolantTempC() * 1.8 + 32;
 }
 
-short E46CanBusFrame::decodeOilTempC() const
+int_fast8_t E46CanBusFrame::decodeOilTempC() const
 {
     /*
     Unit: C
     CAN Id: 0x545 (1349)
-    Conversion: B5 - 48.373
+    Conversion: bit5 - 48.373
     */
 
     if(frameId() != E46_OIL_TEMP)
         return 0;
 
-    unsigned short b5;
+    int_fast8_t bit5, temp;
     const QByteArray &payload = this->payload();
 
-    b5 = payload[4];
+    bit5 = payload[4];
+    temp = bit5 - 48.373;
 
-    return b5 - 48.373;
+    return temp;
 }
 
-short E46CanBusFrame::decodeOilTempF() const
+int_fast8_t E46CanBusFrame::decodeOilTempF() const
 {
     /*
     Unit: C

@@ -3,7 +3,7 @@
 
 // BMW E46 CAN Bus
 #define E46_ENGINE_RPM      0x316
-#define E46_VEHICLE_SPEED   0x000 // Unknown
+#define E46_VEHICLE_SPEED   0x153 // TODO: Test this id and conversion.
 #define E46_FUEL_LEVEL      0x613
 #define E46_COOLANT_TEMP    0x329
 #define E46_OIL_TEMP        0x545

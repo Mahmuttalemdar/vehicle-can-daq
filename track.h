@@ -12,7 +12,8 @@ class Track
 public:
     Track();
     Track(const QJsonObject&);
-    Track(const std::string&, const std::string&, const std::string&, const std::string&, const double&, const double&, const float&, const unsigned short&);
+    Track(const std::string&, const std::string&, const std::string&, const std::string&,
+          const double&, const double&, const float&, const unsigned short&);
     std::string getTrackName() const;
     std::string getState() const;
     std::string getCity() const;

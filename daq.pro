@@ -2,13 +2,16 @@ TEMPLATE = app
 
 QT += qml quick \
       serialbus \
-      positioning
+      positioning \
+      widgets
+
 CONFIG += c++11
 
 SOURCES += main.cpp \
     candataobject.cpp \
     e46canbusframe.cpp \
-    track.cpp
+    track.cpp \
+    can_utilities.cpp
 
 RESOURCES += qml.qrc
 
@@ -22,6 +25,8 @@ HEADERS += \
     candataobject.h \
     e46canbusframe.h \
     canframeid.h \
-    track.h
+    track.h \
+    can_utilities.h \
+    trackhandler.h
 
 DISTFILES +=

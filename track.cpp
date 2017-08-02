@@ -12,7 +12,8 @@ Track::Track(){
     track_found_ = false;
 }
 
-Track::Track(const std::string &trackName, const std::string &state, const std::string &city, const std::string &postalCode, const double &latitude, const double &longitude, const float &length, const unsigned short &turns) {
+Track::Track(const std::string &trackName, const std::string &state, const std::string &city, const std::string &postalCode,
+             const double &latitude, const double &longitude, const float &length, const unsigned short &turns) {
     track_name_ = trackName;
     state_ = state;
     city_ = city;

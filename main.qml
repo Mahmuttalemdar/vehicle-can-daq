@@ -1,6 +1,7 @@
 import QtQuick 2.5
 import QtQuick.Window 2.2
 import QtQuick.Extras 1.4
+import QtQuick.Controls 1.4
 import QtQuick.Controls.Styles 1.4
 import "ColorFormatter.js" as CF
 
@@ -243,18 +244,31 @@ Window {
 
         Text {
             id: txtSpeed
-            x: 400
-            y: 304
-            width: 98
+            x: 324
+            y: 302
+            width: 149
             height: 46
             color: "#fff"
-            text: '<b>' + speedValue + '</b>' + '<font size="1"> MPH</font>'
+            text: "<b>0</b>"
             font.family: "Arial"
             horizontalAlignment: Text.AlignRight
             style: Text.Normal
             styleColor: "#000000"
             font.pixelSize: 52
             verticalAlignment: Text.AlignTop
+        }
+
+        Text {
+            id: txtMph
+            x: 479
+            y: 302
+            width: 70
+            height: 57
+            color: "#ffffff"
+            text: qsTr("MPH")
+            horizontalAlignment: Text.AlignLeft
+            verticalAlignment: Text.AlignBottom
+            font.pixelSize: 22
         }
 
 /****************** LAP TIMING ******************/
@@ -266,20 +280,11 @@ Window {
             width: 285
             height: 58
             color: "#fff"
-            text: "Current " + '<font size="4"> 0:47.10</font>'
+            text: "Current " + '<font size="4"> --:--.--</font>'
             z: 1
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignLeft
             font.pixelSize: 36
-        }
-
-        Image {
-            id: imgTrack
-            x: 8
-            y: 100
-            width: 184
-            height: 285
-            source: "images/track_placeholder.png"
         }
 
         Text {
@@ -289,7 +294,7 @@ Window {
             width: 166
             height: 58
             color: "#ffffff"
-            text: "Best <font size=\"4\"> 1:50.92</font>"
+            text: "Best <font size=\"4\"> --:--.--</font>"
             z: 1
             verticalAlignment: Text.AlignVCenter
             font.pixelSize: 24
@@ -337,6 +342,43 @@ Window {
             height: 23
             text: qsTr("Frames: " + frames)
             color: (frames == 0) ? "red" : "green"
+            font.pixelSize: 12
+        }
+
+/****************** GUI ELEMENTS ******************/
+
+        ComboBox {
+            id: cboTracks
+            objectName: "cboTracks"
+            x: 8
+            y: 365
+            width: 200
+            height: 30
+            style: ComboBoxStyle {
+                textColor: "#000000"
+                background: Rectangle {
+                    color: "#000000"
+                    border.width: 1
+                    border.color: "#ffffff"
+                    antialiasing: true
+                }
+                label: Label {
+                    text: "Select Track..."
+                    verticalAlignment: Text.AlignVCenter
+                    font.pixelSize: 14
+                    color: "#ffffff"
+                }
+            }
+        }
+
+        Text {
+            id: txtSelectedTrack
+            x: 8
+            y: 336
+            width: 142
+            height: 23
+            color: "#ffffff"
+            text: cboTracks.currentText
             font.pixelSize: 12
         }
     }

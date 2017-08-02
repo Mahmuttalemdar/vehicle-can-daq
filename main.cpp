@@ -2,19 +2,121 @@
 #include <QCursor>
 #include <QQmlApplicationEngine>
 #include <QQmlComponent>
+#include <QJsonArray>
 #include <QCanBus>
 #include <QCanBusDevice>
 #include <QGeoPositionInfoSource>   // <-- Geo Positioning
-#include "e46canbusframe.h"
 #include "canframeid.h"
+#include "e46canbusframe.h"
+#include "can_utilities.h"
 #include "track.h"
 #include <iostream>
 
-using namespace std;
+namespace {
+    // Globals.
+    QObject *object;
+    QCanBusDevice *device;
+    canUtils::canDeviceTypes canDeviceType = canUtils::E46_DEVICE;
+}
 
-// Global.
-QObject *object;
-QCanBusDevice *device;
+// Reads JSON string from file into a document object.
+QJsonDocument readJson(const QString &filePath);
+
+// Creates Qt JSON object from document object.
+QJsonObject toJsonObject(const QJsonDocument &jsonDoc, const QString &trackName);
+
+// Sets the filters to the CAN bus device.
+QCanBusDevice::Filter setCanFilter(const unsigned short &id);
+
+// Selects the appropriate frame mapping function for the CAN bus device in use.
+void selectFrameMap();
+
+int main(int argc, char *argv[])
+{
+    QGuiApplication app(argc, argv);
+    // Hide mouse curser.
+    QGuiApplication::setOverrideCursor(QCursor(Qt::BlankCursor));
+
+    // Load gauge UI.
+    QQmlEngine engine;
+    QQmlComponent component(&engine, QUrl(QStringLiteral("qrc:/main.qml")));
+    object = component.create();
+
+/***************************** Lap Timing and Geolocation functionality *****************************/
+
+    // Read JSON document from file path.
+    QJsonDocument jsonDoc = readJson(QCoreApplication::applicationDirPath() + QDir::separator() + "tracks.json");
+
+    // Populate track list for combobox selection in GUI.
+    QObject *comboBoxTracks = object->findChild<QObject*>("cboTracks");
+
+    if (comboBoxTracks)
+    {
+        QStringList list = jsonDoc.object().keys();
+        comboBoxTracks->setProperty("model", list);
+        comboBoxTracks->setProperty("currentIndex", -1);
+    }
+
+    QString selectedTrack = comboBoxTracks->property("currentText").toString();
+
+    // Create C++ JSON Object with item specified from the document.
+    QJsonObject jsonObj = toJsonObject(jsonDoc, selectedTrack);
+
+    // Create Track object containing all relevant racetrack information.
+    Track track(jsonObj);
+
+    if(track.trackFound()) {
+        std::cout << "Track Found" << std::endl;
+        std::cout << track.toString() << std::endl;
+    }
+    else {
+        std::cout << "Track NOT Found" << std::endl;
+        std::cout << track.toString() << std::endl;
+    }
+
+    /*QGeoPositionInfoSource *source = QGeoPositionInfoSource::createDefaultSource(0);
+    if(source)
+        source->minimumUpdateInterval();
+
+    QGeoPositionInfo gpi = source->lastKnownPosition();
+    QGeoCoordinate gc = gpi.coordinate();
+
+    std::cout << gc.toString().toStdString() << std::endl;
+    std::cout << source->availableSources();*/
+
+/************************************** CAN Bus functionality ***************************************/
+
+    if(QCanBus::instance()->plugins().contains("socketcan"))
+    {
+        // Create CAN bus device and connect to can0 via SocketCAN plugin.
+        device = QCanBus::instance()->createDevice("socketcan", "can0");
+
+        device->connectDevice();
+
+        // Set filters for needed data frames from the CAN bus device.
+        if(device->state() == QCanBusDevice::ConnectedState)
+        {
+            object->setProperty("connStatus", "Connected");
+
+            // Apply filters to CAN Bus device.
+            QList<QCanBusDevice::Filter> filterList;
+
+            filterList.append(setCanFilter(E46_ENGINE_RPM));
+            //filterList.append(setCanFilter(E46_VEHICLE_SPEED));
+            filterList.append(setCanFilter(E46_FUEL_LEVEL));
+            filterList.append(setCanFilter(E46_COOLANT_TEMP));
+            filterList.append(setCanFilter(E46_OIL_TEMP));
+
+            device->setConfigurationParameter(QCanBusDevice::RawFilterKey, QVariant::fromValue(filterList));
+
+            // Connect framesRecieved signal to slot function for reading frames.
+            QObject::connect(device, &QCanBusDevice::framesReceived, selectFrameMap);
+        }
+    }
+
+    return app.exec();
+}
+
 
 QJsonDocument readJson(const QString &filePath) {
     // Read JSON file to QString object.
@@ -46,6 +148,7 @@ QJsonObject toJsonObject(const QJsonDocument &jsonDoc, const QString &trackName)
         jsonObj = jsonDoc.object();
     else {
         jsonObj = QJsonObject();
+
         return jsonObj;
     }
 
@@ -71,113 +174,15 @@ QCanBusDevice::Filter setCanFilter(const unsigned short &id)
     return filter;
 }
 
-void checkFrames()
+void selectFrameMap()
 {
-    // Read frames.
-    while(device->framesAvailable() > 0)
+    switch(canDeviceType)
     {
-        object->setProperty("canFilter", "Yes");
-        object->setProperty("frames", device->framesAvailable());
-
-        QCanBusFrame frame = device->readFrame();
-        E46CanBusFrame canFrame(frame.frameId(), frame.payload());
-
-        if(canFrame.isValid())
-        {
-            switch(canFrame.frameId())
-            {
-                case E46_ENGINE_RPM:
-                    object->setProperty("rpmValue", canFrame.decodeEngineRpm());
-                    break;
-                /*case VEHICLE_SPEED:
-                    object->setProperty("speedValue", canFrame.decodeVehicleSpeed());
-                    break;*/
-                case E46_FUEL_LEVEL:
-                    object->setProperty("fuelValue", canFrame.decodeFuelLevel());
-                    break;
-                case E46_COOLANT_TEMP:
-                    object->setProperty("coolantValue", canFrame.decodeCoolantTempC());
-                    break;
-                case E46_OIL_TEMP:
-                    object->setProperty("oilValue", canFrame.decodeOilTempC());
-                    break;
-                default:
-                    break;
-            }
-        }
+        case canUtils::OBD2_DEVICE:
+            canUtils::mapObd2Frames(object, device);
+            break;
+        case canUtils::E46_DEVICE:
+            canUtils::mapE46Frames(object, device);
+            break;
     }
-}
-
-int main(int argc, char *argv[])
-{
-    QGuiApplication app(argc, argv);
-    // Hide mouse curser.
-    QGuiApplication::setOverrideCursor(QCursor(Qt::BlankCursor));
-
-    // Load gauge UI.
-    QQmlEngine engine;
-    QQmlComponent component(&engine, QUrl(QStringLiteral("qrc:/main.qml")));
-    object = component.create();
-
-/***************************** Lap Timing and Geolocation functionality *****************************/
-
-    // Read JSON document from file path.
-    QJsonDocument jsonDoc = readJson(QCoreApplication::applicationDirPath() + QDir::separator() + "tracks.json");
-
-    // Create C++ JSON Object with item specified from the document.
-    QJsonObject jsonObj = toJsonObject(jsonDoc, "Road Atlanta");
-
-    // Create Track object containing all relevant racetrack information.
-    Track track(jsonObj);
-
-    if(track.trackFound()) {
-        cout << "Track Found" << endl;
-        cout << track.toString() << endl;
-    }
-    else {
-        cout << "Track NOT Found" << endl;
-        cout << track.toString() << endl;
-    }
-
-    /*QGeoPositionInfoSource *source = QGeoPositionInfoSource::createDefaultSource(0);
-    if(source)
-        source->minimumUpdateInterval();
-
-    QGeoPositionInfo gpi = source->lastKnownPosition();
-    QGeoCoordinate gc = gpi.coordinate();
-
-    cout << gc.toString().toStdString() << endl;
-    cout << source->availableSources();*/
-
-/************************************** CAN Bus functionality ***************************************/
-
-    if(QCanBus::instance()->plugins().contains("socketcan"))
-    {
-        // Create CAN bus device and connect to can0 via SocketCAN plugin.
-        device = QCanBus::instance()->createDevice("socketcan", "can0");
-
-        device->connectDevice();
-
-        // Set filters for needed data frames from the CAN bus device.
-        if(device->state() == QCanBusDevice::ConnectedState)
-        {
-            object->setProperty("connStatus", "Connected");
-
-            // Apply filters to CAN Bus device.
-            QList<QCanBusDevice::Filter> filterList;
-
-            filterList.append(setCanFilter(E46_ENGINE_RPM));
-            //filterList.append(setCanFilter(E46_VEHICLE_SPEED));
-            filterList.append(setCanFilter(E46_FUEL_LEVEL));
-            filterList.append(setCanFilter(E46_COOLANT_TEMP));
-            filterList.append(setCanFilter(E46_OIL_TEMP));
-
-            device->setConfigurationParameter(QCanBusDevice::RawFilterKey, QVariant::fromValue(filterList));
-
-            // Connect framesRecieved signal to slot function for reading frames.
-            QObject::connect(device, &QCanBusDevice::framesReceived, checkFrames);
-        }
-    }
-
-    return app.exec();
 }
