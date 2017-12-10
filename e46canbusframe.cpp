@@ -21,120 +21,115 @@ E46CanBusFrame::E46CanBusFrame(quint32 identifier, const QByteArray &data)
     QCanBusFrame(identifier, data)
 {}
 
-uint_fast8_t E46CanBusFrame::decodeEngineRpm() const
+unsigned int E46CanBusFrame::decodeEngineRpm() const
 {
-    /*
-    Unit: RPM
-    CAN Id: 0x316 (790)
-    Conversion: ((bit4 * 256) + bit3) / 6.4
-    */
+//    Unit: RPM
+//    CAN Id: 0x316 (790)
+//    Conversion: ((byte3 * 256) + byte2) / 6.4
 
-    if(frameId() != E46_ENGINE_RPM)
-        return 0;
+    unsigned int rpm = 0;
 
-    uint_fast8_t bit3, bit4, rpm;
-    const QByteArray &payload = this->payload();
+    if(frameId() == E46_ENGINE_RPM)
+    {
+        const QByteArray &PAYLOAD = this->payload();
+        const uint8_t    BYTE2    = static_cast<uint8_t>(PAYLOAD[2]);
+        const uint8_t    BYTE3    = static_cast<uint8_t>(PAYLOAD[3]);
 
-    bit3 = payload[2];
-    bit4 = payload[3];
-    rpm = ((bit4 << 8) ^ bit3) / 6.4;
+        rpm = ((BYTE3 << 8) ^ BYTE2) / 6.4;
+    }
 
     return rpm;
 }
 
-uint_fast8_t E46CanBusFrame::decodeVehicleSpeed() const
+unsigned int E46CanBusFrame::decodeVehicleSpeed() const
 {
-    /*
-    Unit: MPH
-    CAN Id: 0x153 (339)
-    Conversion: ((bit3 * 256) + bit2) * 0.0776714;
-    */
+//    Unit: MPH
+//    CAN Id: 0x153 (339)
+//    Conversion: ((byte3 * 256) + byte2) * 0.0776714;
 
-    if(frameId() != E46_VEHICLE_SPEED)
-        return 0;
+//    if(frameId() != E46_VEHICLE_SPEED)
+//        return 0;
 
-    uint_fast8_t speed;
-    const QByteArray &payload = this->payload();
+//    unsigned int speed;
+//    const QByteArray &payload = this->payload();
 
-    speed = payload[2];
+//    speed = payload[2];
 
-    return speed;
+//    return speed;
+
+    return 0;
 }
 
-uint_fast8_t E46CanBusFrame::decodeFuelLevel() const
+uint8_t E46CanBusFrame::decodeFuelLevel() const
 {
-    /*
-    Unit: Liters -> Percent (%)
-    CAN Id: 0x613 (1555)
-    Conversion: bit3
-    Note: bit3 is fuel level. Full being hex 39. Fuel light comes on at hex 8.
-    */
+//    Unit: Liters -> Percent (%)
+//    CAN Id: 0x613 (1555)
+//    Conversion: byte2
+//    Note: byte2 is fuel level. Full being hex 39. Fuel light comes on at hex 8.
 
-    if(frameId() != E46_FUEL_LEVEL)
-        return 0;
+    const uint8_t FUEL_CAPACITY = 57;
 
-    uint_fast8_t bit3, fuelLevel;
-    const float fuelCapacity = 57.0; //62.83784;
-    const QByteArray &payload = this->payload();
+    uint8_t fuelLevel = 0;
 
-    bit3 = payload[2];
-    fuelLevel = (bit3 / fuelCapacity) * 100;
+    if(frameId() == E46_FUEL_LEVEL)
+    {
+        const QByteArray &PAYLOAD = this->payload();
+        const uint8_t    BYTE2    = static_cast<uint8_t>(PAYLOAD[2]);
+
+        fuelLevel = (BYTE2 / FUEL_CAPACITY) * 100;
+    }
 
     return fuelLevel;
 }
 
-int_fast8_t E46CanBusFrame::decodeCoolantTempC() const
+int E46CanBusFrame::decodeCoolantTempC() const
 {
-    /*
-    Unit: C
-    CAN Id: 0x329 (809)
-    Conversion: (bit2 * 0.75) - 48.373
-    */
+//    Unit: C
+//    CAN Id: 0x329 (809)
+//    Conversion: (byte1 * 0.75) - 48.373
 
-    if(frameId() != E46_COOLANT_TEMP)
-        return 0;
+    int temp = 0;
 
-    int_fast8_t bit2, temp;
-    const QByteArray &payload = this->payload();
+    if(frameId() == E46_COOLANT_TEMP)
+    {
+        const QByteArray &PAYLOAD = this->payload();
+        const uint8_t    BYTE1    = static_cast<uint8_t>(PAYLOAD[1]);
 
-    bit2 = payload[1];
-    temp = (bit2 * 0.75) - 48.373;
+        temp = (BYTE1 * 0.75) - 48.373;
+    }
 
     return temp;
 }
 
-int_fast8_t E46CanBusFrame::decodeCoolantTempF() const
+int E46CanBusFrame::decodeCoolantTempF() const
 {
-    /*
-    Unit: C
-    CAN Id: 0x329 (809)
-    Conversion: (decodeCoolantTempC * 1.8) + 32
-    */
+//    Unit: C
+//    CAN Id: 0x329 (809)
+//    Conversion: (decodeCoolantTempC * 1.8) + 32
 
     return decodeCoolantTempC() * 1.8 + 32;
 }
 
-int_fast8_t E46CanBusFrame::decodeOilTempC() const
+int E46CanBusFrame::decodeOilTempC() const
 {
-    /*
-    Unit: C
-    CAN Id: 0x545 (1349)
-    Conversion: bit5 - 48.373
-    */
+//    Unit: C
+//    CAN Id: 0x545 (1349)
+//    Conversion: byte4 - 48.373
+
+    int temp = 0;
 
     if(frameId() != E46_OIL_TEMP)
-        return 0;
+    {
+        const QByteArray &PAYLOAD = this->payload();
+        const uint8_t    BYTE4    = static_cast<uint8_t>(PAYLOAD[4]);
 
-    int_fast8_t bit5, temp;
-    const QByteArray &payload = this->payload();
-
-    bit5 = payload[4];
-    temp = bit5 - 48.373;
+        temp = BYTE4 - 48.373;
+    }
 
     return temp;
 }
 
-int_fast8_t E46CanBusFrame::decodeOilTempF() const
+int E46CanBusFrame::decodeOilTempF() const
 {
     /*
     Unit: C

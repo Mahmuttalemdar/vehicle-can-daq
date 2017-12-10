@@ -11,16 +11,16 @@ class E46CanBusFrame : public QCanBusFrame
         E46CanBusFrame(FrameType);
         E46CanBusFrame(quint32, const QByteArray&);
 
-        uint_fast8_t decodeEngineRpm() const;
-        uint_fast8_t decodeVehicleSpeed() const;
-        uint_fast8_t decodeFuelLevel() const;
+        unsigned int decodeEngineRpm()    const;
+        unsigned int decodeVehicleSpeed() const;
+        uint8_t      decodeFuelLevel()    const;
 
-        int_fast8_t decodeCoolantTempC() const;
-        int_fast8_t decodeCoolantTempF() const;
-        int_fast8_t decodeOilTempC() const;
-        int_fast8_t decodeOilTempF() const;
+        int decodeCoolantTempC() const;
+        int decodeCoolantTempF() const;
+        int decodeOilTempC()     const;
+        int decodeOilTempF()     const;
 
-        unsigned short decodeServiceLights() const;
+        unsigned int decodeServiceLights() const;
 };
 
 #endif // E46CANBUSFRAME_H
