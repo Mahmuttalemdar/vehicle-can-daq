@@ -67,7 +67,7 @@ uint8_t E46CanBusFrame::decodeFuelLevel() const
 //    Conversion: byte2
 //    Note: byte2 is fuel level. Full being hex 39. Fuel light comes on at hex 8.
 
-    const uint8_t FUEL_CAPACITY = 57;
+    const float FUEL_CAPACITY = 57.0;
 
     uint8_t fuelLevel = 0;
 
@@ -118,7 +118,7 @@ int E46CanBusFrame::decodeOilTempC() const
 
     int temp = 0;
 
-    if(frameId() != E46_OIL_TEMP)
+    if(frameId() == E46_OIL_TEMP)
     {
         const QByteArray &PAYLOAD = this->payload();
         const uint8_t    BYTE4    = static_cast<uint8_t>(PAYLOAD[4]);
